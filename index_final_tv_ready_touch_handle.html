@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <meta charset="UTF-8">
+  <title>Think in Bars!</title>
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; font-family: sans-serif; }
+    body { display: flex; flex-direction: column; }
+    #canvas-container { flex: 1; position: relative; overflow: hidden; }
+    canvas { position: absolute; top: 0; left: 0; z-index: 1; }
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      background: #eee;
+      border-top: 2px solid #ccc;
+      gap: 30px;
+    }
+    .tool-button {
+      width: 48px;
+      height: 48px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+    }
+    .tool-button img {
+      width: 90%;
+      height: auto;
+    }
+    .color-button {
+      width: 36px;
+      height: 36px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .tool-button.active {
+      outline: 3px solid #007bff;
+      border-radius: 6px;
+    }
+    .title-banner {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 28px;
+      font-weight: bold;
+      background: #fff;
+      padding: 6px 12px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      z-index: 10;
+    }
+  </style>
+
+<style>
+  body {
+    font-family: sans-serif;
+  }
+  .toolbar button {
+    margin: 4px;
+    padding: 6px 12px;
+    font-size: 16px;
+  }
+  @media (max-width: 600px) {
+    .toolbar button {
+      font-size: 12px;
+      padding: 4px 8px;
+    }
+    .bar-label {
+      font-size: 14px !important;
+    }
+  }
+  @media (min-width: 601px) and (max-width: 1024px) {
+    .toolbar button {
+      font-size: 14px;
+      padding: 5px 10px;
+    }
+    .bar-label {
+      font-size: 18px !important;
+    }
+  }
+  @media (min-width: 1025px) {
+    .toolbar button {
+      font-size: 20px;
+      padding: 10px 16px;
+    }
+    .bar-label {
+      font-size: 24px !important;
+    }
+  }
+</style>
+
+
+<style>
+  body {
+    font-family: sans-serif;
+  }
+  .toolbar button {
+    margin: 4px;
+    padding: 8px;
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .toolbar button img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    vertical-align: middle;
+  }
+  @media (max-width: 600px) {
+    .toolbar button {
+      font-size: 12px;
+      padding: 6px;
+    }
+    .toolbar button img {
+      width: 24px;
+      height: 24px;
+    }
+  }
+</style>
+
+</head>
+<body>
+  
+
+<!-- About Button -->
+<button onclick="toggleAbout()" title="About"
+  style="position: absolute; top: 12px; left: 12px; z-index: 99; padding: 8px 14px; font-size: 14px;
+         background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer;">
+  About
+</button>
+
+<div class="title-banner" style="text-align:center;">
+  <div style="font-size:32px; font-weight:bold;">Think in Bars!</div>
+  <div style="font-size:18px; font-weight:normal; margin-top:4px;">A Structured Way of Problem Solving</div>
+</div>
+
+
+<button onclick="clearAll()" title="Clear All" 
+  style="position: absolute; top: 12px; right: 12px; z-index: 99; padding: 8px 12px; font-size: 14px;
+         background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer;">
+  Clear All
+</button>
+
+  <div id="canvas-container">
+    <canvas id="canvas" style="pointer-events: auto;"></canvas>
+    <canvas id="drawingCanvas" style="pointer-events: none;"></canvas>
+  </div>
+
+  
+<div class="toolbar" id="toolbar">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <button class="tool-button" title="Grid Size"><img src="https://img.icons8.com/ios-filled/30/grid.png"/></button>
+    <input id="gridSlider" type="range" min="40" max="120" value="80" oninput="gridSize=parseInt(this.value); resizeCanvas();">
+  </div>
+
+  <div style="display:flex;align-items:center;gap:8px;">
+    <img src="https://img.icons8.com/ios-glyphs/30/pencil-tip.png" title="Pen Size" style="width: 28px; height: 28px;">
+    <input type="range" min="1" max="10" value="5" oninput="penSize=this.value">
+    <button onclick="toggleDrawMode(this, 'black')" class="tool-button color-button" style="background:black"></button>
+    <button onclick="toggleDrawMode(this, 'red')" class="tool-button color-button" style="background:red"></button>
+    <button onclick="toggleDrawMode(this, 'blue')" class="tool-button color-button" style="background:blue"></button>
+    <button onclick="undoDraw()" class="tool-button" title="Undo Drawing"><img src="https://img.icons8.com/ios-glyphs/30/undo.png"/></button>
+    <button onclick="redoDraw()" class="tool-button" title="Redo Drawing"><img src="https://img.icons8.com/ios-glyphs/30/redo.png"/></button>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:6px;">
+    <!-- Bar tools -->
+    <span id="bar-tools" style="display:flex;gap:6px;">
+
+
+
+
+<button onclick="addLabel('text')" class="tool-button" title="Label Text">
+  <span style="font-size: 20px;">ABC</span>
+</button>
+<button onclick="addLabel('num')" class="tool-button" title="Label Number">
+  <span style="font-size: 20px;">123</span>
+</button>
+
+
+
+
+      <button onclick="toggleArrow()" class="tool-button" title="Arrow"><img src="https://img.icons8.com/ios-glyphs/30/resize-diagonal.png"/></button>
+      <button onclick="splitBar()" class="tool-button" title="Split"><img src="https://img.icons8.com/ios-glyphs/30/divide.png"/></button>
+      <button onclick="duplicateBar()" class="tool-button" title="Duplicate"><img src="https://img.icons8.com/ios-glyphs/30/copy.png"/></button>
+    </span>
+    
+    <!-- Bar color -->
+    <button onclick="addBar('white', true)" class="tool-button color-button" style="background:white; border: 2px dashed #999;" title="White"></button>
+    <button onclick="addBar('black', true)" class="tool-button color-button" style="background:black; border: 2px dashed #999;" title="Black"></button>
+    <button onclick="addBar('#f8bbd0')" class="tool-button color-button" style="background:#f8bbd0" title="Pink"></button>
+    <button onclick="addBar('#fff9c4')" class="tool-button color-button" style="background:#fff9c4" title="Yellow"></button>
+    <button onclick="addBar('#b3e5fc')" class="tool-button color-button" style="background:#b3e5fc" title="Blue"></button>
+    <button onclick="addBar('#c8e6c9')" class="tool-button color-button" style="background:#c8e6c9" title="Green"></button>
+
+    <!-- Bar undo/redo -->
+    <button onclick="undoBar()" class="tool-button" title="Undo Bar"><img src="https://img.icons8.com/ios-glyphs/30/undo.png"/></button>
+    <button onclick="redoBar()" class="tool-button" title="Redo Bar"><img src="https://img.icons8.com/ios-glyphs/30/redo.png"/></button>
+
+    <!-- Fullscreen -->
+    <button onclick="toggleFullscreen()" class="tool-button" title="Fullscreen"><img src="https://img.icons8.com/ios-glyphs/30/full-screen.png"/></button>
+  </div>
+</div>
+
+
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const drawingCanvas = document.getElementById('drawingCanvas');
+const drawingCtx = drawingCanvas.getContext('2d');
+const splitMenu = document.createElement('div');
+
+const minGrid = Math.floor((window.innerHeight - 80) / 10);
+const maxGrid = Math.floor((window.innerHeight - 80) / 8);
+let gridSize = maxGrid;
+document.getElementById('gridSlider').min = minGrid;
+document.getElementById('gridSlider').max = maxGrid;
+document.getElementById('gridSlider').value = gridSize;
+
+let bars = [];
+let selectedBar = null;
+let penSize = 2;
+let penColor = 'black';
+let isDrawing = false;
+let currentMode = 'select';
+let isDragging = false, isResizing = false;
+let dragOffsetX = 0, dragOffsetY = 0;
+let undoStack = [], redoStack = [], barRedoStack = [];
+
+function resizeCanvas() {
+  const drawingImage = drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height);
+
+  updateLabels();
+  canvas.width = drawingCanvas.width = window.innerWidth;
+  canvas.height = drawingCanvas.height = window.innerHeight - 80;
+  drawAll();
+  drawingCtx.putImageData(drawingImage, 0, 0);
+}
+
+window.onload = () => {
+  resizeCanvas();
+  drawAll();
+  drawingCtx.putImageData(drawingImage, 0, 0);
+};
+
+function drawGrid() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 加强细线可见度
+  for (let x = 0; x <= canvas.width; x += gridSize / 10) {
+    ctx.beginPath();
+    ctx.strokeStyle = (x % gridSize === 0) ? '#888' : '#ccc'; // 主线深色，细线浅色
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
+    ctx.stroke();
+  }
+
+  for (let y = 0; y <= canvas.height; y += gridSize) {
+    ctx.beginPath();
+    ctx.strokeStyle = '#888'; // 主线颜色
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+  }
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 纵向细分线（每格细分10个单位）
+  for (let x = 0; x <= canvas.width; x += gridSize / 10) {
+    ctx.beginPath();
+    ctx.strokeStyle = (x % gridSize === 0) ? '#ddd' : '#f0f0f0'; // 主线与细线颜色区分
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
+    ctx.stroke();
+  }
+
+  // 横向主线（不细分）
+  for (let y = 0; y <= canvas.height; y += gridSize) {
+    ctx.beginPath();
+    ctx.strokeStyle = '#ddd';
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+  }
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = '#ddd';
+  for (let x = 0; x <= canvas.width; x += gridSize) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+  }
+  for (let y = 0; y <= canvas.height; y += gridSize) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+  }
+}
+
+function drawAll() {
+  drawGrid();
+  for (const bar of bars) {
+    const bx = bar.xRatio * gridSize;
+    const by = bar.yRatio * gridSize;
+    const bw = bar.widthRatio * gridSize;
+    const bh = bar.heightRatio * gridSize;
+
+    ctx.fillStyle = bar.color;
+    ctx.fillRect(bx, by, bw, bh);
+
+    if (bar.dashed) ctx.setLineDash([6, 4]);
+    ctx.strokeStyle = '#000';
+    ctx.strokeRect(bx, by, bw, bh);
+    ctx.setLineDash([]);
+
+    // Unified visible bar resize handle
+    ctx.fillStyle = 'black';
+    ctx.fillRect(bx + bw - 8, by - 20, 16, 32);
+
+
+    ctx.fillStyle = "#000";
+    
+
+    if (bar.arrow) {
+      const y = by - 15;
+      ctx.strokeStyle = bar.dashed ? 'red' : '#000';
+      ctx.beginPath(); ctx.moveTo(bx, y); ctx.lineTo(bx + bw, y); ctx.stroke();
+
+      
+      ctx.beginPath(); ctx.moveTo(bx + bw - 10, y - 5); ctx.lineTo(bx + bw, y); ctx.lineTo(bx + bw - 10, y + 5); ctx.fill();
+    }
+
+    if (bar.split > 1) {
+      const w = bw / bar.split;
+      for (let i = 1; i < bar.split; i++) {
+        const x = bx + i * w;
+        ctx.beginPath();
+        ctx.setLineDash([4, 2]);
+        ctx.moveTo(x, by);
+        ctx.lineTo(x, by + bh);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+    // Unified visible bar resize handle
+    ctx.fillStyle = 'black';
+    ctx.fillRect(bx + bw - 8, by - 20, 16, 32);
+
+      }
+    }
+  }
+}
+
+function addBar(color, dashed = false) {
+  let yRatio = 2;
+  if (bars.length > 0) {
+    const last = bars[bars.length - 1];
+    yRatio = last.yRatio + 2;
+  }
+  const bar = {
+    widthRatio: 4,
+    heightRatio: 1,
+    xRatio: 3,
+    yRatio,
+    color,
+    arrow: false,
+    dashed,
+    split: 0
+  };
+  bars.push(bar);
+  drawAll();
+  drawingCtx.putImageData(drawingImage, 0, 0);
+}
+
+function toggleDrawMode(btn, color) {
+  const isActive = btn.classList.contains('active');
+  document.querySelectorAll('.color-button').forEach(b => b.classList.remove('active'));
+  if (!isActive) {
+    btn.classList.add('active');
+    penColor = color;
+    currentMode = 'draw';
+    drawingCanvas.style.pointerEvents = 'auto';
+    canvas.style.pointerEvents = 'none';
+  } else {
+    currentMode = 'select';
+    drawingCanvas.style.pointerEvents = 'none';
+    canvas.style.pointerEvents = 'auto';
+  }
+}
+
+function undoDraw() {
+  if (undoStack.length > 0) {
+    const last = undoStack.pop();
+    redoStack.push(drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height));
+    drawingCtx.putImageData(last, 0, 0);
+  }
+}
+function redoDraw() {
+  if (redoStack.length > 0) {
+    const item = redoStack.pop();
+    undoStack.push(drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height));
+    drawingCtx.putImageData(item, 0, 0);
+  }
+}
+function undoBar() {
+  if (bars.length > 0) {
+    const removed = bars.pop();
+    if (removed.labels) {
+      for (let type in removed.labels) {
+        removed.labels[type].remove();
+      }
+    }
+    barRedoStack.push(removed);
+    drawAll();
+  drawingCtx.putImageData(drawingImage, 0, 0);
+  }
+}
+function redoBar() {
+  if (barRedoStack.length > 0) {
+    const restored = barRedoStack.pop();
+    bars.push(restored);
+    if (restored.labels) {
+      for (let type in restored.labels) {
+        document.getElementById("canvas-container").appendChild(restored.labels[type]);
+      }
+    }
+    drawAll();
+  drawingCtx.putImageData(drawingImage, 0, 0);
+  }
+}
+function toggleArrow() {
+  if (selectedBar) {
+    selectedBar.arrow = !selectedBar.arrow;
+    drawAll();
+  drawingCtx.putImageData(drawingImage, 0, 0);
+  }
+}
+function duplicateBar() {
+  if (selectedBar) {
+    const copy = { ...selectedBar };
+    copy.yRatio += 2;
+    bars.push(copy);
+    drawAll();
+  drawingCtx.putImageData(drawingImage, 0, 0);
+  }
+}
+function splitBar() {
+  if (!selectedBar) return;
+  if (!document.getElementById("split-menu")) {
+    const menu = document.createElement("div");
+    menu.id = "split-menu";
+    menu.style.position = "absolute";
+    menu.style.display = "flex";
+    menu.style.flexDirection = "column";
+    menu.style.gap = "4px";
+    menu.style.background = "#fff";
+    menu.style.border = "1px solid #ccc";
+    menu.style.padding = "6px";
+    menu.style.borderRadius = "6px";
+    menu.style.zIndex = 99;
+    for (let i = 1; i <= 12; i++) {
+      const b = document.createElement("button");
+      b.innerText = i;
+      b.onclick = () => { selectedBar.split = i; menu.remove(); drawAll();
+  drawingCtx.putImageData(drawingImage, 0, 0); };
+      menu.appendChild(b);
+    }
+    document.body.appendChild(menu);
+  }
+  const menu = document.getElementById("split-menu");
+  const bx = selectedBar.xRatio * gridSize;
+  const by = selectedBar.yRatio * gridSize;
+  menu.style.left = `${bx + 10}px`;
+  menu.style.top = `${by - 10}px`;
+  menu.style.display = 'flex';
+}
+
+canvas.addEventListener('mousedown', e => {
+  const r = canvas.getBoundingClientRect();
+  const mx = e.clientX - r.left;
+  const my = e.clientY - r.top;
+  for (let bar of bars.slice().reverse()) {
+    const bx = bar.xRatio * gridSize;
+    const by = bar.yRatio * gridSize;
+    const bw = bar.widthRatio * gridSize;
+    const bh = bar.heightRatio * gridSize;
+    if (mx >= bx + bw - 5 && mx <= bx + bw + 5 && my >= by + bh / 2 - 5 && my <= by + bh / 2 + 5) {
+      selectedBar = bar;
+      isResizing = true;
+      document.getElementById("bar-tools").style.display = "flex";
+      return;
+    }
+    if (mx >= bx && mx <= bx + bw && my >= by && my <= by + bh) {
+      selectedBar = bar;
+      dragOffsetX = mx - bx;
+      dragOffsetY = my - by;
+      isDragging = true;
+      document.getElementById("bar-tools").style.display = "flex";
+      return;
+    }
+  }
+  selectedBar = null;
+  document.getElementById("bar-tools").style.display = "none";
+});
+canvas.addEventListener('mousemove', e => {
+  if (!selectedBar) return;
+  const r = canvas.getBoundingClientRect();
+  const mx = e.clientX - r.left;
+  const my = e.clientY - r.top;
+  if (isResizing) {
+    const snapUnit = gridSize / 10;
+    selectedBar.widthRatio = Math.max(1, Math.round((mx - selectedBar.xRatio * gridSize) / snapUnit) * snapUnit / gridSize);
+    updateLabels();
+drawAll();
+  drawingCtx.putImageData(drawingImage, 0, 0);
+    return;
+  }
+  if (isDragging) {
+    const snapUnit = gridSize / 10;
+    selectedBar.xRatio = Math.round((mx - dragOffsetX) / snapUnit) * snapUnit / gridSize;
+    selectedBar.yRatio = Math.round((my - dragOffsetY) / gridSize);
+    updateLabels();
+drawAll();
+  drawingCtx.putImageData(drawingImage, 0, 0);
+  }
+});
+canvas.addEventListener('mouseup', () => { isDragging = false; isResizing = false; });
+
+drawingCanvas.addEventListener('mousedown', e => {
+  if (currentMode !== 'draw') return;
+  undoStack.push(drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height));
+  redoStack = [];
+  isDrawing = true;
+  const r = drawingCanvas.getBoundingClientRect();
+  drawingCtx.beginPath();
+  drawingCtx.moveTo(e.clientX - r.left, e.clientY - r.top);
+});
+drawingCanvas.addEventListener('mousemove', e => {
+  if (!isDrawing) return;
+  const r = drawingCanvas.getBoundingClientRect();
+  drawingCtx.strokeStyle = penColor;
+  drawingCtx.lineWidth = penSize;
+  drawingCtx.lineJoin = "round";
+  drawingCtx.lineCap = "round";
+  drawingCtx.lineTo(e.clientX - r.left, e.clientY - r.top);
+  drawingCtx.stroke();
+});
+drawingCanvas.addEventListener('mouseup', () => isDrawing = false);
+
+function toggleFullscreen() {
+  const elem = document.documentElement;
+  if (!document.fullscreenElement) {
+    elem.requestFullscreen().then(() => {
+      setTimeout(() => {
+      const minGrid = Math.floor((window.innerHeight - 80) / 10);
+      const maxGrid = Math.floor((window.innerHeight - 80) / 8);
+      gridSize = maxGrid;
+      const slider = document.getElementById('gridSlider');
+      slider.min = minGrid;
+      slider.max = maxGrid;
+      slider.value = gridSize;
+      resizeCanvas();
+    }, 300);
+    });
+  } else {
+    document.exitFullscreen().then(() => {
+      setTimeout(() => {
+      const minGrid = Math.floor((window.innerHeight - 80) / 10);
+      const maxGrid = Math.floor((window.innerHeight - 80) / 8);
+      gridSize = maxGrid;
+      const slider = document.getElementById('gridSlider');
+      slider.min = minGrid;
+      slider.max = maxGrid;
+      slider.value = gridSize;
+      resizeCanvas();
+    }, 300);
+    });
+  }
+}
+
+
+function clearAll() {
+  bars = [];
+  selectedBar = null;
+  barRedoStack = [];
+  drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+  undoStack = [];
+  redoStack = [];
+  document.querySelectorAll('#canvas-container div').forEach(el => el.remove());
+  drawAll();
+  drawingCtx.putImageData(drawingImage, 0, 0);
+
+}
+
+function toggleAbout() {
+  const modal = document.getElementById("aboutModal");
+  modal.style.display = modal.style.display === "none" ? "block" : "none";
+}
+
+
+function addLabel(type) {
+  if (!selectedBar) return;
+
+  if (!selectedBar.labels) selectedBar.labels = {};
+
+  if (selectedBar.labels[type]) {
+    selectedBar.labels[type].remove();
+    delete selectedBar.labels[type];
+    drawAll();
+  drawingCtx.putImageData(drawingImage, 0, 0);
+    return;
+  }
+
+  const label = document.createElement('div');
+  label.contentEditable = true;
+  label.addEventListener('blur', updateLabels);
+  label.addEventListener('input', updateLabels);
+  setTimeout(() => updateLabels(), 0);
+  label.addEventListener('focus', () => {
+    if ((type === 'text' && label.innerText === 'Label') ||
+        (type === 'num' && label.innerText === '0')) {
+      label.innerText = '';
+      setTimeout(() => {
+        label.focus();
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(label);
+        range.collapse(false); // Place cursor at end
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }, 0);
+    }
+  });
+  label.innerText = type === 'text' ? 'Label' : '0';
+  label.style.position = 'absolute';
+  label.style.fontSize = '32px';
+      label.style.height = '32px';
+      label.style.lineHeight = '32px';
+      label.style.display = 'flex';
+      label.style.alignItems = 'center';
+      label.style.justifyContent = 'center';
+      label.style.textAlign = 'center';
+      label.style.padding = '0';
+      label.style.overflow = 'hidden';
+      label.style.whiteSpace = 'nowrap';
+      label.style.padding = '0';
+  label.style.padding = '2px 6px';
+  label.style.borderRadius = '4px';
+  label.style.background = 'transparent';
+  label.style.color = '#000';
+  label.style.border = 'none';
+  label.style.color = '#000';
+  label.style.cursor = 'move';
+  label.style.zIndex = 100;
+
+  const x = type === 'text'
+    ? (selectedBar.xRatio - 1) * gridSize + 8
+    : selectedBar.xRatio * gridSize + selectedBar.widthRatio * gridSize / 2 - 20;
+  const y = type === 'text'
+    ? selectedBar.yRatio * gridSize + 5
+    : selectedBar.yRatio * gridSize - 60;
+
+  label.style.left = `${x}px`;
+  label.style.top = `${y}px`;
+      label.style.fontSize = '32px';
+      label.style.height = '32px';
+      label.style.lineHeight = '32px';
+      label.style.display = 'flex';
+      label.style.alignItems = 'center';
+      label.style.justifyContent = 'center';
+      label.style.textAlign = 'center';
+      label.style.padding = '0';
+      label.style.overflow = 'hidden';
+      label.style.whiteSpace = 'nowrap';
+      label.style.padding = '0';
+
+  let offsetX = 0, offsetY = 0, dragging = false;
+
+  label.addEventListener('mousedown', (e) => {
+    dragging = true;
+    offsetX = e.offsetX;
+    offsetY = e.offsetY;
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    label.style.left = `${e.clientX - offsetX}px`;
+    label.style.top = `${e.clientY - offsetY}px`;
+  });
+
+  document.addEventListener('mouseup', () => {
+    dragging = false;
+  });
+
+  document.getElementById("canvas-container").appendChild(label);
+  selectedBar.labels[type] = label;
+}
+
+
+function getTextColorForBackground(hexColor) {
+  const r = parseInt(hexColor.substr(1, 2), 16);
+  const g = parseInt(hexColor.substr(3, 2), 16);
+  const b = parseInt(hexColor.substr(5, 2), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  return brightness > 150 ? '#000' : '#fff';
+}
+
+
+document.addEventListener('mousedown', function (e) {
+  if (!e.target.isContentEditable) {
+    document.getSelection()?.removeAllRanges();
+  }
+});
+
+
+
+function updateLabels() {
+  for (let bar of bars) {
+    if (!bar.labels) continue;
+    for (let type in bar.labels) {
+      const label = bar.labels[type];
+      const x = type === 'text'
+        ? (bar.xRatio - 1) * gridSize + 8
+        : bar.xRatio * gridSize + bar.widthRatio * gridSize / 2;
+      const y = type === 'text'
+        ? bar.yRatio * gridSize + gridSize / 2 - label.offsetHeight / 2
+        : bar.yRatio * gridSize - 60;
+
+      // 动态水平居中
+      if (type === 'num') {
+        label.style.left = `${x - label.offsetWidth / 2}px`;
+      } else {
+        label.style.left = `${x}px`;
+      }
+
+      label.style.top = `${y}px`;
+      label.style.fontSize = '32px';
+      label.style.height = '32px';
+      label.style.lineHeight = '32px';
+      label.style.display = 'flex';
+      label.style.alignItems = 'center';
+      label.style.justifyContent = 'center';
+      label.style.textAlign = 'center';
+      label.style.padding = '0';
+      label.style.overflow = 'hidden';
+      label.style.whiteSpace = 'nowrap';
+      label.style.padding = '0';
+    }
+  }
+}
+
+
+
+document.addEventListener('click', (e) => {
+  const popup = document.getElementById('split-popup');
+  if (popup && !popup.contains(e.target) && !e.target.matches('button') && !e.target.closest('#bar-toolbox')) {
+    popup.remove();
+  }
+});
+
+
+let draggingArrow = null;
+let draggingArrowType = null;
+
+canvas.addEventListener('mousedown', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  for (let bar of bars) {
+    if (!bar.showArrow) continue;
+    const by = bar.yRatio * gridSize;
+
+    if (Math.abs(mx - bar.arrowStartX) < 12 && Math.abs(my - (by - 20)) < 12) {
+      draggingArrow = bar;
+      draggingArrowType = 'start';
+      return;
+    }
+    if (Math.abs(mx - bar.arrowEndX) < 12 && Math.abs(my - (by - 20)) < 12) {
+      draggingArrow = bar;
+      draggingArrowType = 'end';
+      return;
+    }
+  }
+});
+
+canvas.addEventListener('mousemove', e => {
+  if (draggingArrow) {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    if (draggingArrowType === 'start') draggingArrow.arrowStartX = mx;
+    else draggingArrow.arrowEndX = mx;
+    drawAll();
+  }
+});
+
+canvas.addEventListener('mouseup', () => {
+  if (draggingArrow) {
+    saveState();
+    draggingArrow = null;
+    draggingArrowType = null;
+  }
+});
+
+
+// === UNIVERSAL TOUCH SUPPORT ===
+
+// Pen drawing on touch screens
+let isTouchDrawing = false;
+drawingCanvas.addEventListener('touchstart', e => {
+  if (!penMode) return;
+  const touch = e.touches[0];
+  const mx = touch.clientX - drawingCanvas.getBoundingClientRect().left;
+  const my = touch.clientY - drawingCanvas.getBoundingClientRect().top;
+  drawingCtx.beginPath();
+  drawingCtx.moveTo(mx, my);
+  isTouchDrawing = true;
+  e.preventDefault();
+});
+
+drawingCanvas.addEventListener('touchmove', e => {
+  if (!isTouchDrawing || !penMode) return;
+  const touch = e.touches[0];
+  const mx = touch.clientX - drawingCanvas.getBoundingClientRect().left;
+  const my = touch.clientY - drawingCanvas.getBoundingClientRect().top;
+  drawingCtx.lineTo(mx, my);
+  drawingCtx.stroke();
+  e.preventDefault();
+});
+
+drawingCanvas.addEventListener('touchend', () => {
+  if (isTouchDrawing && penMode) {
+    isTouchDrawing = false;
+    drawingImage = drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height);
+    saveState();
+  }
+});
+
+// Bar drag & resize, and arrow handle drag on touch devices
+canvas.addEventListener('touchstart', e => {
+  const touch = e.touches[0];
+  const mx = touch.clientX - canvas.getBoundingClientRect().left;
+  const my = touch.clientY - canvas.getBoundingClientRect().top;
+
+  for (let bar of bars.slice().reverse()) {
+    const bx = bar.xRatio * gridSize;
+    const by = bar.yRatio * gridSize;
+    const bw = bar.widthRatio * gridSize;
+    const bh = bar.heightRatio * gridSize;
+
+    if (bar.showArrow) {
+      if (Math.abs(mx - bar.arrowStartX) < 12 && Math.abs(my - (by - 20)) < 12) {
+        draggingArrow = bar;
+        draggingArrowType = 'start';
+        e.preventDefault();
+        return;
+      }
+      if (Math.abs(mx - bar.arrowEndX) < 12 && Math.abs(my - (by - 20)) < 12) {
+        draggingArrow = bar;
+        draggingArrowType = 'end';
+        e.preventDefault();
+        return;
+      }
+    }
+
+    if (mx >= bx + bw - 5 && mx <= bx + bw + 5 && my >= by + bh / 2 - 5 && my <= by + bh / 2 + 5) {
+      selectedBar = bar;
+      isResizing = true;
+      document.getElementById("bar-tools").style.display = "flex";
+      e.preventDefault();
+      return;
+    }
+    if (mx >= bx && mx <= bx + bw && my >= by && my <= by + bh) {
+      selectedBar = bar;
+      dragOffsetX = mx - bx;
+      dragOffsetY = my - by;
+      isDragging = true;
+      document.getElementById("bar-tools").style.display = "flex";
+      e.preventDefault();
+      return;
+    }
+  }
+  selectedBar = null;
+  document.getElementById("bar-tools").style.display = "none";
+});
+
+canvas.addEventListener('touchmove', e => {
+  const touch = e.touches[0];
+  const mx = touch.clientX - canvas.getBoundingClientRect().left;
+  const my = touch.clientY - canvas.getBoundingClientRect().top;
+
+  if (draggingArrow) {
+    if (draggingArrowType === 'start') draggingArrow.arrowStartX = mx;
+    else draggingArrow.arrowEndX = mx;
+    drawAll();
+    e.preventDefault();
+    return;
+  }
+
+  if (!selectedBar) return;
+
+  const snapUnit = gridSize / 10;
+  if (isResizing) {
+    selectedBar.widthRatio = Math.max(1, Math.round((mx - selectedBar.xRatio * gridSize) / snapUnit) * snapUnit / gridSize);
+    updateLabels();
+    drawAll();
+    drawingCtx.putImageData(drawingImage, 0, 0);
+    e.preventDefault();
+    return;
+  }
+
+  if (isDragging) {
+    selectedBar.xRatio = Math.round((mx - dragOffsetX) / snapUnit) * snapUnit / gridSize;
+    selectedBar.yRatio = Math.round((my - dragOffsetY) / gridSize);
+    updateLabels();
+    drawAll();
+    drawingCtx.putImageData(drawingImage, 0, 0);
+    e.preventDefault();
+  }
+});
+
+canvas.addEventListener('touchend', () => {
+  if (draggingArrow) {
+    saveState();
+    draggingArrow = null;
+    draggingArrowType = null;
+  }
+  isDragging = false;
+  isResizing = false;
+});
+
+</script>
+
+
+
+<!-- About Modal -->
+<div id="aboutModal" style="display:none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+     width: 500px; max-width: 90%; background: white; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+     border-radius: 10px; z-index: 999; font-size: 16px; line-height: 1.6;">
+  <h2 style="margin-top:0;">📘 About This Tool</h2>
+  <p><strong>Think in Bars!</strong> is a visual teaching aid designed to support pupils in solving word problems more effectively.</p>
+  <p>It aims to:</p>
+  <ul>
+    <li>Help pupils <strong>understand and solve</strong> problems using <strong>bar models</strong></li>
+    <li>Guide them to <strong>visualize mathematical relationships</strong> clearly</li>
+    <li>Support teachers in <strong>explaining problem-solving strategies</strong> more effectively</li>
+  </ul>
+  <p>“Think in Bars!” was created based on real classroom needs, especially for pupils who struggle to process word problems abstractly. By turning numbers into visuals, pupils can truly <em>see the math</em> behind the words.</p>
+  <p>This tool was developed by <strong>Mr. Hui Kar Loong</strong><br>
+  (<em>Guru Cemerlang Matematik Sekolah Rendah</em>)<br>
+  with the assistance of <strong>ChatGPT</strong> by OpenAI.</p>
+  
+  <div style="text-align:right; margin-top:16px;">
+    <button onclick="toggleAbout()" style="padding: 6px 12px; background: #dc3545; color: white;
+            border: none; border-radius: 6px; cursor: pointer;">Close</button>
+  </div>
+</div>
+
+
+<!-- Copyright Notice -->
+<div style="position: fixed; bottom: 90px; right: 12px; font-size: 12px; color: #777; z-index: 50;">
+  © 2025 Hui Kar Loong. All rights reserved.
+</div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const screenWidth = window.innerWidth;
+  const isTouchDevice = 'ontouchstart' in window;
+
+  if (screenWidth <= 600) {
+    console.log("📱 Mobile device detected");
+    document.body.classList.add('device-mobile');
+  } else if (screenWidth <= 1024) {
+    console.log("📲 Tablet device detected");
+    document.body.classList.add('device-tablet');
+  } else {
+    console.log("🖥️ Desktop or large screen detected");
+    document.body.classList.add('device-desktop');
+  }
+
+  if (isTouchDevice) {
+    document.body.classList.add('touch-enabled');
+  }
+});
+
+// === UNIVERSAL TOUCH SUPPORT ===
+
+// Pen drawing on touch screens
+let isTouchDrawing = false;
+drawingCanvas.addEventListener('touchstart', e => {
+  if (!penMode) return;
+  const touch = e.touches[0];
+  const mx = touch.clientX - drawingCanvas.getBoundingClientRect().left;
+  const my = touch.clientY - drawingCanvas.getBoundingClientRect().top;
+  drawingCtx.beginPath();
+  drawingCtx.moveTo(mx, my);
+  isTouchDrawing = true;
+  e.preventDefault();
+});
+
+drawingCanvas.addEventListener('touchmove', e => {
+  if (!isTouchDrawing || !penMode) return;
+  const touch = e.touches[0];
+  const mx = touch.clientX - drawingCanvas.getBoundingClientRect().left;
+  const my = touch.clientY - drawingCanvas.getBoundingClientRect().top;
+  drawingCtx.lineTo(mx, my);
+  drawingCtx.stroke();
+  e.preventDefault();
+});
+
+drawingCanvas.addEventListener('touchend', () => {
+  if (isTouchDrawing && penMode) {
+    isTouchDrawing = false;
+    drawingImage = drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height);
+    saveState();
+  }
+});
+
+// Bar drag & resize, and arrow handle drag on touch devices
+canvas.addEventListener('touchstart', e => {
+  const touch = e.touches[0];
+  const mx = touch.clientX - canvas.getBoundingClientRect().left;
+  const my = touch.clientY - canvas.getBoundingClientRect().top;
+
+  for (let bar of bars.slice().reverse()) {
+    const bx = bar.xRatio * gridSize;
+    const by = bar.yRatio * gridSize;
+    const bw = bar.widthRatio * gridSize;
+    const bh = bar.heightRatio * gridSize;
+
+    if (bar.showArrow) {
+      if (Math.abs(mx - bar.arrowStartX) < 12 && Math.abs(my - (by - 20)) < 12) {
+        draggingArrow = bar;
+        draggingArrowType = 'start';
+        e.preventDefault();
+        return;
+      }
+      if (Math.abs(mx - bar.arrowEndX) < 12 && Math.abs(my - (by - 20)) < 12) {
+        draggingArrow = bar;
+        draggingArrowType = 'end';
+        e.preventDefault();
+        return;
+      }
+    }
+
+    if (mx >= bx + bw - 5 && mx <= bx + bw + 5 && my >= by + bh / 2 - 5 && my <= by + bh / 2 + 5) {
+      selectedBar = bar;
+      isResizing = true;
+      document.getElementById("bar-tools").style.display = "flex";
+      e.preventDefault();
+      return;
+    }
+    if (mx >= bx && mx <= bx + bw && my >= by && my <= by + bh) {
+      selectedBar = bar;
+      dragOffsetX = mx - bx;
+      dragOffsetY = my - by;
+      isDragging = true;
+      document.getElementById("bar-tools").style.display = "flex";
+      e.preventDefault();
+      return;
+    }
+  }
+  selectedBar = null;
+  document.getElementById("bar-tools").style.display = "none";
+});
+
+canvas.addEventListener('touchmove', e => {
+  const touch = e.touches[0];
+  const mx = touch.clientX - canvas.getBoundingClientRect().left;
+  const my = touch.clientY - canvas.getBoundingClientRect().top;
+
+  if (draggingArrow) {
+    if (draggingArrowType === 'start') draggingArrow.arrowStartX = mx;
+    else draggingArrow.arrowEndX = mx;
+    drawAll();
+    e.preventDefault();
+    return;
+  }
+
+  if (!selectedBar) return;
+
+  const snapUnit = gridSize / 10;
+  if (isResizing) {
+    selectedBar.widthRatio = Math.max(1, Math.round((mx - selectedBar.xRatio * gridSize) / snapUnit) * snapUnit / gridSize);
+    updateLabels();
+    drawAll();
+    drawingCtx.putImageData(drawingImage, 0, 0);
+    e.preventDefault();
+    return;
+  }
+
+  if (isDragging) {
+    selectedBar.xRatio = Math.round((mx - dragOffsetX) / snapUnit) * snapUnit / gridSize;
+    selectedBar.yRatio = Math.round((my - dragOffsetY) / gridSize);
+    updateLabels();
+    drawAll();
+    drawingCtx.putImageData(drawingImage, 0, 0);
+    e.preventDefault();
+  }
+});
+
+canvas.addEventListener('touchend', () => {
+  if (draggingArrow) {
+    saveState();
+    draggingArrow = null;
+    draggingArrowType = null;
+  }
+  isDragging = false;
+  isResizing = false;
+});
+
+</script>
+
+</body>
+
+
+</html>
